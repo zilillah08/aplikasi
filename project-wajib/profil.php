@@ -403,28 +403,31 @@ input[type="email"] {
                 }
                 ?>
 
-                    <?php 
+                <?php 
                     if ($role=="mitra") {
                      ?>
                       <li class="nav-label first">main menu</li>
-                    <li><a class="" href="dashboardmitra.php" aria-expanded="false"><i
+                    <li><a class="" href="ds_mitra.php" aria-expanded="false"><i
                                 class="fa fa-light fa-table-columns"></i><span class="nav-text">Dashboard</span></a>
                     </li>
-                    <li><a class="" href="profilmitra.php" aria-expanded="false"><i 
-                                class="fa-solid fa-user"></i><span class="nav-text">profil</span></a>
+                    <li><a class="" href="workshop.php" aria-expanded="false"><i
+                                class="fa fa-users"></i><span class="nav-text">Workshop</span></a>
                     </li>
-                    <li><a class="" href="kelolaWorkshop.php" aria-expanded="false"><i
-                                class="fa fa-users"></i><span class="nav-text">Kelola Workshop</span></a>
+                    <li><a class="" href="rating.php" aria-expanded="false"><i 
+                                class="fa-solid fa-user-group"></i><span class="nav-text">Rating</span></a>
                     </li>
-                    <li><a class="" href="daftarPeserta.php" aria-expanded="false"><i 
-                                class="fa-solid fa-user-group"></i><span class="nav-text">Daftar Peserta</span></a>
+                    <li class="nav-label first">Laporan</li>
+                    <li><a class="" href="data_keungan.php" aria-expanded="false"><i
+                                class="fa-solid fa-book"></i><span class="nav-text">Data Keuangan</span></a>
                     </li>
-                    <li><a class="" href="sertifikatmitra.php" aria-expanded="false"><i
-                                class="fa fa-certificate"></i><span class="nav-text">Sertifikat</span></a>
+                    <li><a class="" href="data_peserta.php" aria-expanded="false"><i
+                                class="fa-solid fa-book"></i><span class="nav-text">Data Peserta</span></a>
                     </li>
                     <?php 
                 }
                 ?>
+                
+                
                 <?php 
                     if ($role=="peserta") {
                      ?>

@@ -17,25 +17,28 @@ if ($conn->connect_error) {
 // Ambil ID workshop dari URL atau parameter
 $id_workshop = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
-// Query untuk mengambil data workshop termasuk kolom gambar
-$sql = "SELECT id_workshop, nama_workshop, deskripsi_workshop, gambar, materi_dilatih, lokasi, tanggal_mulai, tanggal_selesai,tipe, harga_workshop, benefit, persyaratan, sesi_pelatihan FROM workshop WHERE id_workshop = ?";
+$sql = "SELECT id_workshop, nama_workshop, deskripsi_workshop, gambar, materi_dilatih, lokasi, tanggal_mulai, tanggal_selesai, tipe, harga_workshop, benefit, persyaratan, sesi_pelatihan 
+FROM workshop 
+WHERE id_workshop = ?";
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("i", $id_workshop);
 $stmt->execute();
 $result = $stmt->get_result();
+
 if ($result->num_rows > 0) {
-    $workshop = $result->fetch_assoc();
-    
-    // Mengonversi gambar BLOB ke format base64
-    if ($workshop['gambar']) {
-        $base64Image = base64_encode($workshop['gambar']);
-        $imageSrc = "data:image/jpg;base64," . $base64Image; // Sesuaikan dengan format gambar (jpeg, png, dll)
-    } else {
-        $imageSrc = ''; // Jika gambar tidak ada
-    }
+$workshop = $result->fetch_assoc();
+
+// Periksa apakah ada nama gambar
+if (!empty($workshop['gambar'])) {
+// Path gambar disimpan di database, jadi kita hanya menambahkannya di tag img
+$imageSrc = "uploads/" . $workshop['gambar'];
 } else {
-    echo "Workshop tidak ditemukan!";
-    exit();
+// Gambar default jika tidak ada gambar
+$imageSrc = 'path/to/default/image.jpg';
+}
+} else {
+echo "Workshop tidak ditemukan!";
+exit();
 }
 
 // Query untuk menghitung rata-rata rating
@@ -471,7 +474,7 @@ $conn->close();
     <div id="workshopModal" class="modal">
         <div class="modal-content">
             <span class="close">&times;</span>
-            <img src="<?php echo $imageSrc; ?>" alt="Workshop Image" class="modal-image">
+            <img src="<?php echo $imageSrc; ?>" alt="Workshop Image" />
             <h3><?php echo htmlspecialchars($workshop['nama_workshop']); ?></h3>
             <p class="modal-description"><?php echo nl2br(htmlspecialchars($workshop['deskripsi_workshop'])); ?></p>
 

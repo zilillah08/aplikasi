@@ -8,81 +8,73 @@ if (!isset($_SESSION['role'])) {
 $role = $_SESSION['role'];
 
 if ($role !== 'mitra') {
-    // Jika pengguna bukan mitra, arahkan ke halaman login
-    header("Location: loginUser.php?aksi=unauthorized");
+    // Jika pengguna bukan admin, arahkan ke halaman login
+    header("Location:loginUser.php?aksi=unauthorized");
     exit(); // Menghentikan eksekusi skrip
 }
 
+// Ambil data dari sesi
+$id_user = $_SESSION['id_user'];
+
 // Koneksi ke database
-$servername = "localhost";
-$username = "root";
+$host = "localhost";
+$user = "root";
 $password = "";
-$database = "worksmart"; // Ganti dengan nama database Anda
+$dbname = "worksmart";
 
-
-// Membuat koneksi
-$conn = new mysqli($servername, $username, $password, $database);
+// Koneksi ke database
+$conn = new mysqli("localhost", "root", "", "worksmart");
 
 // Cek koneksi
 if ($conn->connect_error) {
     die("Koneksi gagal: " . $conn->connect_error);
 }
 
+// Total workshop milik mitra
+$sql_workshop = "SELECT COUNT(*) AS total_workshop 
+                 FROM workshop 
+                 WHERE id_mitra = ?";
+$stmt = $conn->prepare($sql_workshop);
+$stmt->bind_param("i", $id_mitra);
+$stmt->execute();
+$result_workshop = $stmt->get_result();
+$total_workshop = $result_workshop->fetch_assoc()['total_workshop'];
 
-// Query untuk menghitung jumlah workshop
-$sql = "SELECT COUNT(*) AS total_workshop FROM workshop";
-$result = $conn->query($sql); // Pastikan $conn terdefinisi dengan benar
+// Total peserta yang mendaftar di workshop mitra
+$sql_participants = "SELECT COUNT(*) AS total_participants 
+                     FROM data_peserta 
+                     INNER JOIN workshop ON data_peserta.id_workshop = workshop.id_workshop 
+                     WHERE workshop.id_mitra = ?";
+$stmt = $conn->prepare($sql_participants);
+$stmt->bind_param("i", $id_mitra);
+$stmt->execute();
+$result_participants = $stmt->get_result();
+$total_participants = $result_participants->fetch_assoc()['total_participants'];
 
-// Ambil hasilnya
-$total_workshop = 0;
-if ($result->num_rows > 0) {
-    $row = $result->fetch_assoc();
-    $total_workshop = $row['total_workshop'];
-} else {
-    $total_workshop = 0; // Jika tidak ada data
-}
-// Query untuk menghitung jumlah peserta
-$sql_participants = "SELECT COUNT(*) AS total_participants FROM data_peserta";
-$result_participants = $conn->query($sql_participants);
+// Grafik jumlah peserta per bulan
+$sql_graph = "SELECT MONTH(data_peserta.tanggal_daftar) AS bulan, COUNT(*) AS jumlah 
+              FROM data_peserta 
+              INNER JOIN workshop ON data_peserta.id_workshop = workshop.id_workshop 
+              WHERE workshop.id_mitra = ?
+              GROUP BY MONTH(data_peserta.tanggal_daftar)";
+$stmt = $conn->prepare($sql_graph);
+$stmt->bind_param("i", $id_mitra);
+$stmt->execute();
+$result_graph = $stmt->get_result();
 
-// Ambil hasilnya
-$total_participants = 0;
-if ($result_participants->num_rows > 0) {
-    $row_participants = $result_participants->fetch_assoc();
-    $total_participants = $row_participants['total_participants'];
-} else {
-    $total_participants = 0; // Jika tidak ada data
-}
-// Query untuk menghitung jumlah mitra
-$sql_partners = "SELECT COUNT(*) AS total_partners FROM data_mitra"; // Pastikan nama tabelnya benar
-$result_partners = $conn->query($sql_partners);
+// Siapkan array untuk grafik
+$pendaftar_per_bulan = array_fill(0, 12, 0); // Array dengan 12 elemen (Jan - Dec)
 
-// Ambil hasilnya
-$total_partners = 0;
-if ($result_partners->num_rows > 0) {
-    $row_partners = $result_partners->fetch_assoc();
-    $total_partners = $row_partners['total_partners'];
-} else {
-    $total_partners = 0; // Jika tidak ada data
-
-}
-
-// Query untuk menghitung jumlah pendaftar per bulan
-$sql = "SELECT MONTH(tanggal_daftar) AS bulan, COUNT(*) AS jumlah FROM data_peserta GROUP BY MONTH(tanggal_daftar)";
-$result = $conn->query($sql);
-
-// Siapkan array untuk menyimpan jumlah peserta per bulan
-$pendaftar_per_bulan = array_fill(0, 12, 0); // Array berisi 12 bulan (Jan - Dec)
-
-while ($row = $result->fetch_assoc()) {
-    $bulan = (int) $row['bulan'];
-    $pendaftar_per_bulan[$bulan - 1] = (int) $row['jumlah']; // Menyimpan jumlah pendaftar per bulan
+while ($row = $result_graph->fetch_assoc()) {
+    $bulan = (int)$row['bulan'];
+    $pendaftar_per_bulan[$bulan - 1] = (int)$row['jumlah'];
 }
 
-
-// Menutup koneksi
+// Tutup koneksi
+$stmt->close();
 $conn->close();
- ?>
+?>
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -99,9 +91,8 @@ $conn->close();
     <link rel="stylesheet" href="./vendor/owl-carousel/css/owl.theme.default.min.css">
     <link href="./vendor/jqvmap/css/jqvmap.min.css" rel="stylesheet">
     <link href="./css/style.css" rel="stylesheet">
-
-
-
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
 </head>
 
 <body>
@@ -131,8 +122,8 @@ $conn->close();
         ***********************************-->
         <div class="nav-header">
             <a href="ds_mitra.php" class="brand-logo">
-                <img class="logo-abbr" src="./images/logoWMK.png" alt="">
-                
+                <img class="logo-abbr" src="./images/logoWMK.png" alt=""><p>
+                <h3 style="color: white;">WorkSmart</h3>
             </a>
 
             <div class="nav-control">
@@ -235,19 +226,18 @@ $conn->close();
                     </li>
                     <li class="nav-label first">Laporan</li>
                     <li><a class="" href="laporan_data_keungan.php" aria-expanded="false"><i
-                                class="fa-solid fa-book"></i><span class="nav-text">data keuangan</span></a>
+                                class="fa-solid fa-book"></i><span class="nav-text">Data Keuangan</span></a>
                     </li>
                     <li><a class="" href="laporan_data_mitra.php" aria-expanded="false"><i
-                                class="fa-solid fa-book"></i><span class="nav-text">data Mitra</span></a>
+                                class="fa-solid fa-book"></i><span class="nav-text">Data Mitra</span></a>
                     </li>
                     <li><a class="" href="laporan_data_peserta.php" aria-expanded="false"><i
-                                class="fa-solid fa-book"></i><span class="nav-text">data Peserta</span></a>
+                                class="fa-solid fa-book"></i><span class="nav-text">Data Peserta</span></a>
                     </li>
                     <?php 
                 }
                 ?>
-
-    <?php 
+                <?php 
                     if ($role=="mitra") {
                      ?>
                       <li class="nav-label first">main menu</li>
@@ -270,7 +260,7 @@ $conn->close();
                     <?php 
                 }
                 ?>
-                <?php 
+                <?php
                     if ($role=="peserta") {
                      ?>
                     <li class="nav-label first">main menu</li>
@@ -313,47 +303,78 @@ $conn->close();
                 </div>
 
                 <div class="row">
-                    <div class="col-lg-3 col-sm-6">
+                    <div class="col-lg-4 col-sm-6">
                         <div class="card">
                             <div class="stat-widget-one card-body">
-                                <div class="stat-content d-inline-block">
-                                    <div class="stat-text"><i class="fa fa-users"></i> Jumlah Workshop</div>
-                                    <div class="stat-digit">10</div>
+                                <div class="stat-icon d-inline-block">
+                                    <a href="./data_workshop.php">
+                                    <i class="fa-solid fa-hands-praying text-success border-success"></i></a>
                                 </div>
+                                <div class="stat-content d-inline-block">
+                                    <div class="stat-text"> Total Workshop</div>
+                                    <div class="stat-digit"><?php echo $total_workshop; ?></div> <!-- Menampilkan jumlah -->
+                                    </div>
                             </div>
                         </div>
                     </div>
-                    <div class="col-lg-3 col-sm-6">
+                    <div class="col-lg-4 col-sm-6">
                         <div class="card">
                             <div class="stat-widget-one card-body">
-                                <div class="stat-content d-inline-block">
-                                    <div class="stat-text"><i class="fa fa-handshake"></i> Jumlah peserta </div>
-                                    <div class="stat-digit">1</div>
+                                <div class="stat-icon d-inline-block">
+                                    <a href="./data_peserta.php">
+                                    <i class="fa-regular fa-user text-primary border-primary"></i></a>
                                 </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                </div>
-
-                <div class="row">
-                    <div class="col-xl-8 col-lg-8 col-md-8">
-                        <div class="card">
-                            <div class="card-header">
-                                <h4 class="card-title">Grafik Peserta Per Workshop</h4>
-                            </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-xl-12 col-lg-8">
-                                        <div id="morris-bar-chart"></div>
+                                <div class="stat-content d-inline-block">
+                                    <div class="stat-text"> Total Peserta</div>
+                                    <div class="stat-digit"><?php echo $total_participants; // Menampilkan jumlah peserta ?>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>                       
+                    </div>
+                    <div class="col-lg-4 col-sm-6">
+                        <div class="card">
+                            <div class="stat-widget-one card-body">
+                                <div class="stat-icon d-inline-block">
+                                    <a href="./data_mitra.php">
+                                    <i class="fa fa-handshake text-danger border-danger"></i></a>
+                                </div>
+                             <!--   <div class="stat-content d-inline-block">
+                                    <div class="stat-text">Total Mitra</div>
+                                    </div>
+                                </div> -->
+                            </div>
+                        </div>
                     </div>
                 </div>
-                
+        <canvas id="myChart" width="300" height="100"></canvas>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+         <script>
+                // Mengambil data dari PHP
+            const pendaftarData = <?php echo json_encode($pendaftar_per_bulan); ?>;
+            // Konfigurasi grafik Chart.js
+            const ctx = document.getElementById('myChart').getContext('2d');
+            const myChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                    datasets: [{
+                        label: 'Jumlah Pendaftar',
+                        data: pendaftarData,
+                        backgroundColor: 'blue'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100
+                        }
+                    }
+                }
+            });
+                </script>
             </div>
         </div>
         <!--**********************************

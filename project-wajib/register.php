@@ -1,5 +1,5 @@
 <?php
-include 'config.php'; 
+include 'config.php';   
 session_start();
 
 // Jika pengguna sudah login, arahkan kembali
@@ -15,7 +15,10 @@ if (isset($_POST['kirim'])) {
     $nama_user = mysqli_real_escape_string($koneksi, $_POST['nama_user']);
     $no_tlp = mysqli_real_escape_string($koneksi, $_POST['no_tlp']);
     $role = mysqli_real_escape_string($koneksi, $_POST['role']);
-    
+
+    // Cek jika role adalah mitra dan nama mitra diisi
+    $nama_mitra = isset($_POST['nama_mitra']) ? mysqli_real_escape_string($koneksi, $_POST['nama_mitra']) : null;
+
     // Periksa apakah email sudah digunakan
     $email_check_query = "SELECT * FROM userr WHERE email = '$email'";
     $email_check_result = mysqli_query($koneksi, $email_check_query);
@@ -55,20 +58,20 @@ if (isset($_POST['kirim'])) {
 
     if ($row) {
         $last_id = $row['id_user'];
-        $last_number = (int)substr($last_id, -1); // Ambil digit terakhir dari ID terakhir
+        $last_number = (int)substr($last_id, -3); // Ambil digit terakhir dari ID terakhir
         $new_number = $last_number + 1;          // Tambahkan 1
     } else {
         $new_number = 1; // Jika tidak ada data, mulai dari 1
     }
 
     // Formatkan ID baru dengan zero padding
-    $id_user = $prefix . $new_number;
+    $id_user = $prefix . str_pad($new_number, 3, '0', STR_PAD_LEFT);
 
     // Menyimpan data ke database
     $query = "INSERT INTO userr (id_user, email, password, nama_user,no_tlp, role) VALUES ('$id_user', '$email', '$hashed_password', '$nama_user','$no_tlp', '$role')";
     
     if (mysqli_query($koneksi, $query)) {
-        // Jika berhasil, simpan data ke tabel peserta jika role = peserta
+        // Jika role = peserta, simpan data ke tabel peserta
         if ($role == 'peserta') {
             $prefix_peserta = "PST" . $tanggal . $bulan;
 
@@ -78,14 +81,14 @@ if (isset($_POST['kirim'])) {
 
             if ($row_peserta) {
                 $last_id_peserta = $row_peserta['id_peserta'];
-                $last_number_peserta = (int)substr($last_id_peserta, -1); // Ambil digit terakhir dari ID peserta terakhir
+                $last_number_peserta = (int)substr($last_id_peserta, -3); // Ambil digit terakhir dari ID peserta terakhir
                 $new_number_peserta = $last_number_peserta + 1;          // Tambahkan 1
             } else {
                 $new_number_peserta = 1; // Jika tidak ada data, mulai dari 1
             }
 
             // Formatkan ID baru peserta
-            $id_peserta = $prefix_peserta . $new_number_peserta;
+            $id_peserta = $prefix_peserta . str_pad($new_number_peserta, 3, '0', STR_PAD_LEFT);  // Pastikan nomor urut selalu 3 digit
 
             // Insert data ke tabel data_peserta
             $query_peserta = "INSERT INTO data_peserta (id_peserta, id_user, nama_user, email,no_tlp, status, tanggal_daftar) 
@@ -98,29 +101,31 @@ if (isset($_POST['kirim'])) {
 
         // Jika role = mitra, simpan data ke tabel data_mitra
         if ($role == 'mitra') {
-            $prefix_mitra = "MTR" . $tanggal . $bulan;
+            if ($nama_mitra) {  // Pastikan nama mitra diisi
+                $prefix_mitra = "MTR" . $tanggal . $bulan;
 
-            // Query untuk mendapatkan ID terakhir mitra
-            $sql_mitra = mysqli_query($koneksi, "SELECT id_mitra FROM data_mitra WHERE id_mitra LIKE '$prefix_mitra%' ORDER BY id_mitra DESC LIMIT 1");
-            $row_mitra = mysqli_fetch_array($sql_mitra);
+                // Query untuk mendapatkan ID terakhir mitra
+                $sql_mitra = mysqli_query($koneksi, "SELECT id_mitra FROM data_mitra WHERE id_mitra LIKE '$prefix_mitra%' ORDER BY id_mitra DESC LIMIT 1");
+                $row_mitra = mysqli_fetch_array($sql_mitra);
 
-            if ($row_mitra) {
-                $last_id_mitra = $row_mitra['id_mitra'];
-                $last_number_mitra = (int)substr($last_id_mitra, -1); // Ambil digit terakhir dari ID mitra terakhir
-                $new_number_mitra = $last_number_mitra + 1;          // Tambahkan 1
-            } else {
-                $new_number_mitra = 1; // Jika tidak ada data, mulai dari 1
-            }
+                if ($row_mitra) {
+                    $last_id_mitra = $row_mitra['id_mitra'];
+                    $last_number_mitra = (int)substr($last_id_mitra, -3); // Ambil digit terakhir dari ID mitra terakhir
+                    $new_number_mitra = $last_number_mitra + 1;          // Tambahkan 1
+                } else {
+                    $new_number_mitra = 1; // Jika tidak ada data, mulai dari 1
+                }
 
-            // Formatkan ID baru mitra
-            $id_mitra = $prefix_mitra . $new_number_mitra;
+                // Formatkan ID baru mitra
+                $id_mitra = $prefix_mitra . str_pad($new_number_mitra, 3, '0', STR_PAD_LEFT); // Pastikan nomor urut selalu 3 digit
 
-            // Insert data ke tabel data_mitra
-            $query_mitra = "INSERT INTO data_mitra (id_mitra, id_user, nama_user, email,no_tlp, status, tanggal_bergabung) 
-                            VALUES ('$id_mitra', '$id_user', '$nama_user', '$email','$no_tlp', 'terdaftar', NOW())";
+                // Insert data ke tabel data_mitra
+                $query_mitra = "INSERT INTO data_mitra (id_mitra, id_user, nama_user, nama_mitra, email,no_tlp, status, tanggal_bergabung) 
+                                VALUES ('$id_mitra', '$id_user', '$nama_user', '$nama_mitra', '$email','$no_tlp', 'terdaftar', NOW())";
 
-            if (!mysqli_query($koneksi, $query_mitra)) {
-                echo "Error: " . mysqli_error($koneksi);
+                if (!mysqli_query($koneksi, $query_mitra)) {
+                    echo "Error: " . mysqli_error($koneksi);
+                }
             }
         }
 
@@ -134,6 +139,7 @@ if (isset($_POST['kirim'])) {
     }
 }
 ?>
+
 
 
 <!DOCTYPE html>
@@ -180,47 +186,68 @@ if (isset($_POST['kirim'])) {
                 <div class="col-md-6">
                     <div class="authincation-content">
                         <div class="row no-gutters">
-                            <div class="col-xl-12">
-                                <div class="auth-form">
-                                    <h4 class="text-center mb-4">Optimalkan Potensi, Wujudkan Efisiensi <p> Daftar WorkSmart Hari Ini!</h4>
-                                    <form action="register.php" method="POST">
-                                        <div class="form-group">
-                                            <label><strong>Email</strong></label>
-                                            <input type="text" class="form-control" id=" " name="email"   required>
-                                        </div>
-                                        <div class="form-group">
-                                            <label><strong>Password</strong></label>
-                                            <div class="input-group">
-                                                <input type="password" class="form-control" name="password" required>
-                                                <button class="input-group-text password-toggle" type="button" onclick="togglePassword()">
-                                                    <i class="fa-regular fa-eye"></i>
-                                                </button>
-                                            </div>
-                                            <p style="margin-top: 5px; font-size: 14px; color: #6c757d;">Gunakan huruf dan angka maksimal 6 karakter</p>
-                                        </div>
-                                        <div class="form-group">
-                                         <label><strong>Nama Lengkap</strong></label>
-                                            <input type="text" class="form-control" id=" " name="nama_user"   required>
-                                        </div>
-                                        <div class="form-group">
-                                         <label><strong>No Handphone</strong></label>
-                                            <input type="text" class="form-control" id=" " name="no_tlp"   required>
-                                        </div>
-                                        <div class="form-group">
-                                            <label><strong>Mendaftar Sebagai</strong></label><br>
-                                            <label><input type="radio" name="role" value="mitra" onclick="disableOtherOption(this)" required> Mitra</label>
-                                            <label><input type="radio" name="role" value="peserta" onclick="disableOtherOption(this)" required> Peserta</label>
-                                        </div>
-                                       
-                                        <div class="text-center mt-4">
-                                            <button type="submit" class="btn btn-primary btn-block" name="kirim">Lanjutkan</button>
-                                        </div>
-                                    </form>
-                                    <div class="new-account mt-3">
-                                        <p>Apakah Kamu Sudah Mempunyai Akun? <a class="text-primary" href="loginUser.php">Masuk</a></p>
-                                    </div>
-                                </div>
-                            </div>
+                        <div class="col-xl-12">
+    <div class="auth-form">
+        <h4 class="text-center mb-4">Optimalkan Potensi, Wujudkan Efisiensi <p> Daftar WorkSmart Hari Ini!</p></h4>
+        <form action="register.php" method="POST">
+            <div class="form-group">
+                <label><strong>Email</strong></label>
+                <input type="text" class="form-control" name="email" required>
+            </div>
+            <div class="form-group">
+                <label><strong>Password</strong></label>
+                <div class="input-group">
+                    <input type="password" class="form-control" name="password" required>
+                    <button class="input-group-text password-toggle" type="button" onclick="togglePassword()">
+                        <i class="fa-regular fa-eye"></i>
+                    </button>
+                </div>
+                <p style="margin-top: 5px; font-size: 14px; color: #6c757d;">Gunakan huruf dan angka maksimal 6 karakter</p>
+            </div>
+            <div class="form-group">
+                <label><strong>Nama Lengkap</strong></label>
+                <input type="text" class="form-control" name="nama_user" required>
+            </div>
+            <div class="form-group">
+                <label><strong>No Handphone</strong></label>
+                <input type="text" class="form-control" name="no_tlp" required>
+            </div>
+            <div class="form-group">
+                <label><strong>Mendaftar Sebagai</strong></label><br>
+                <label><input type="radio" name="role" value="mitra" onclick="toggleMitraForm()" required> Mitra</label>
+                <label><input type="radio" name="role" value="peserta" onclick="toggleMitraForm()" required> Peserta</label>
+            </div>
+
+            <!-- Form tambahan untuk Mitra -->
+            <div id="mitra-form" style="display:none;">
+                <div class="form-group">
+                    <label><strong>Nama Mitra</strong></label>
+                    <input type="text" class="form-control" name="nama_mitra">
+                </div>
+            </div>
+
+            <div class="text-center mt-4">
+                <button type="submit" class="btn btn-primary btn-block" name="kirim">Lanjutkan</button>
+            </div>
+        </form>
+        <div class="new-account mt-3">
+            <p>Apakah Kamu Sudah Mempunyai Akun? <a class="text-primary" href="loginUser.php">Masuk</a></p>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleMitraForm() {
+    var role = document.querySelector('input[name="role"]:checked').value;
+    var mitraForm = document.getElementById('mitra-form');
+    if (role === 'mitra') {
+        mitraForm.style.display = 'block'; // Tampilkan form mitra
+    } else {
+        mitraForm.style.display = 'none'; // Sembunyikan form mitra
+    }
+}
+</script>
+
                         </div>
                     </div>
                 </div>

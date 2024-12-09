@@ -1,4 +1,5 @@
 <?php
+
 include'config.php'; 
 session_start();
 if (!isset($_SESSION['role'])) {
@@ -13,68 +14,78 @@ if ($role !== 'mitra') {
     exit(); // Menghentikan eksekusi skrip
 }
 
-// Ambil data dari sesi
-$id_user = $_SESSION['id_user'];
-
 // Koneksi ke database
-$host = "localhost";
-$user = "root";
+$servername = "localhost";
+$username = "root";
 $password = "";
-$dbname = "worksmart";
+$database = "worksmart"; // Ganti dengan nama database Anda
 
-// Koneksi ke database
-$conn = new mysqli("localhost", "root", "", "worksmart");
+// Membuat koneksi
+$conn = new mysqli($servername, $username, $password, $database);
 
 // Cek koneksi
 if ($conn->connect_error) {
     die("Koneksi gagal: " . $conn->connect_error);
 }
 
-// Total workshop milik mitra
-$sql_workshop = "SELECT COUNT(*) AS total_workshop 
-                 FROM workshop 
-                 WHERE id_mitra = ?";
-$stmt = $conn->prepare($sql_workshop);
-$stmt->bind_param("i", $id_mitra);
-$stmt->execute();
-$result_workshop = $stmt->get_result();
-$total_workshop = $result_workshop->fetch_assoc()['total_workshop'];
-
-// Total peserta yang mendaftar di workshop mitra
-$sql_participants = "SELECT COUNT(*) AS total_participants 
-                     FROM data_peserta 
-                     INNER JOIN workshop ON data_peserta.id_workshop = workshop.id_workshop 
-                     WHERE workshop.id_mitra = ?";
-$stmt = $conn->prepare($sql_participants);
-$stmt->bind_param("i", $id_mitra);
-$stmt->execute();
-$result_participants = $stmt->get_result();
-$total_participants = $result_participants->fetch_assoc()['total_participants'];
-
-// Grafik jumlah peserta per bulan
-$sql_graph = "SELECT MONTH(data_peserta.tanggal_daftar) AS bulan, COUNT(*) AS jumlah 
-              FROM data_peserta 
-              INNER JOIN workshop ON data_peserta.id_workshop = workshop.id_workshop 
-              WHERE workshop.id_mitra = ?
-              GROUP BY MONTH(data_peserta.tanggal_daftar)";
-$stmt = $conn->prepare($sql_graph);
-$stmt->bind_param("i", $id_mitra);
-$stmt->execute();
-$result_graph = $stmt->get_result();
-
-// Siapkan array untuk grafik
-$pendaftar_per_bulan = array_fill(0, 12, 0); // Array dengan 12 elemen (Jan - Dec)
-
-while ($row = $result_graph->fetch_assoc()) {
-    $bulan = (int)$row['bulan'];
-    $pendaftar_per_bulan[$bulan - 1] = (int)$row['jumlah'];
+// Pastikan $id_user adalah ID user yang sedang login
+$id_user = $_SESSION['id_user']; // Contoh mendapatkan id_user dari session
+// Periksa apakah $id_user terdefinisi
+if (empty($id_user)) {
+    die("User ID is not set!");
 }
 
-// Tutup koneksi
-$stmt->close();
-$conn->close();
-?>
 
+// Query untuk menghitung jumlah workshop
+$sql = "SELECT COUNT(*) AS total_workshop 
+        FROM workshop w
+        INNER JOIN data_mitra m ON w.id_mitra = m.id_mitra
+        WHERE m.id_user = '$id_user'";;
+
+$result = $conn->query($sql); // Pastikan $conn terdefinisi dengan benar
+// Periksa apakah query berhasil
+if (!$result) {
+    die("Query failed: " . $conn->error); // Tampilkan error jika query gagal
+}
+// Ambil hasilnya
+$total_workshop = 0;
+if ($result && $result->num_rows > 0) {
+    $row = $result->fetch_assoc();
+    $total_workshop = $row['total_workshop'];
+} else {
+    $total_workshop = 0; // Jika tidak ada data
+}
+
+
+// Query untuk menghitung jumlah peserta
+// $sql_participants = "SELECT COUNT(*) AS total_participants FROM data_peserta";
+// $result_participants = $conn->query($sql_participants);
+
+// Ambil hasilnya
+// $total_participants = 0;
+// if ($result_participants->num_rows > 0) {
+//     $row_participants = $result_participants->fetch_assoc();
+//     $total_participants = $row_participants['total_participants'];
+// } else {
+//     $total_participants = 0; // Jika tidak ada data
+// }
+
+// Query untuk menghitung jumlah pendaftar per bulan
+//$sql = "SELECT MONTH(tanggal_daftar) AS bulan, COUNT(*) AS jumlah FROM data_peserta GROUP BY MONTH(tanggal_daftar)";
+//$result = $conn->query($sql);
+
+// Siapkan array untuk menyimpan jumlah peserta per bulan
+//$pendaftar_per_bulan = array_fill(0, 12, 0); // Array berisi 12 bulan (Jan - Dec)
+
+// while ($row = $result->fetch_assoc()) {
+//     $bulan = (int) $row['bulan'];
+//     $pendaftar_per_bulan[$bulan - 1] = (int) $row['jumlah']; // Menyimpan jumlah pendaftar per bulan
+// }
+
+
+// Menutup koneksi
+$conn->close();
+ ?>
 
 <!DOCTYPE html>
 <html lang="en">
@@ -121,7 +132,7 @@ $conn->close();
             Nav header start
         ***********************************-->
         <div class="nav-header">
-            <a href="ds_mitra.php" class="brand-logo">
+            <a href="home.php" class="brand-logo">
                 <img class="logo-abbr" src="./images/logoWMK.png" alt=""><p>
                 <h3 style="color: white;">WorkSmart</h3>
             </a>
@@ -307,7 +318,7 @@ $conn->close();
                         <div class="card">
                             <div class="stat-widget-one card-body">
                                 <div class="stat-icon d-inline-block">
-                                    <a href="./data_workshop.php">
+                                    <a href="./workshop.php">
                                     <i class="fa-solid fa-hands-praying text-success border-success"></i></a>
                                 </div>
                                 <div class="stat-content d-inline-block">
@@ -317,64 +328,36 @@ $conn->close();
                             </div>
                         </div>
                     </div>
-                    <div class="col-lg-4 col-sm-6">
-                        <div class="card">
-                            <div class="stat-widget-one card-body">
-                                <div class="stat-icon d-inline-block">
-                                    <a href="./data_peserta.php">
-                                    <i class="fa-regular fa-user text-primary border-primary"></i></a>
-                                </div>
-                                <div class="stat-content d-inline-block">
-                                    <div class="stat-text"> Total Peserta</div>
-                                    <div class="stat-digit"><?php echo $total_participants; // Menampilkan jumlah peserta ?>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-4 col-sm-6">
-                        <div class="card">
-                            <div class="stat-widget-one card-body">
-                                <div class="stat-icon d-inline-block">
-                                    <a href="./data_mitra.php">
-                                    <i class="fa fa-handshake text-danger border-danger"></i></a>
-                                </div>
-                             <!--   <div class="stat-content d-inline-block">
-                                    <div class="stat-text">Total Mitra</div>
-                                    </div>
-                                </div> -->
-                            </div>
-                        </div>
-                    </div>
+                    
                 </div>
         <canvas id="myChart" width="300" height="100"></canvas>
-        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
          <script>
-                // Mengambil data dari PHP
-            const pendaftarData = <?php echo json_encode($pendaftar_per_bulan); ?>;
-            // Konfigurasi grafik Chart.js
-            const ctx = document.getElementById('myChart').getContext('2d');
-            const myChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-                    datasets: [{
-                        label: 'Jumlah Pendaftar',
-                        data: pendaftarData,
-                        backgroundColor: 'blue'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            max: 100
-                        }
-                    }
-                }
-            });
-                </script>
+       // Mengambil data dari PHP
+const pendaftarData = <?php echo json_encode($pendaftar_per_bulan); ?>;
+
+// Konfigurasi grafik Chart.js
+const ctx = document.getElementById('myChart').getContext('2d');
+const myChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+        datasets: [{
+            label: 'Jumlah Pendaftar',
+            data: pendaftarData,
+            backgroundColor: 'blue'
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true,
+                max: 100
+            }
+        }
+    }
+});
+    </script>
             </div>
         </div>
         <!--**********************************

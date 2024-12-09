@@ -1,0 +1,54 @@
+[09-Dec-2024 05:10:48 Europe/Berlin] PHP Warning:  Undefined array key "id_mitra" in C:\xampp\htdocs\aplikasi\project-wajib\ds_mitra.php on line 26
+[09-Dec-2024 05:10:50 Europe/Berlin] PHP Warning:  Undefined array key "id_mitra" in C:\xampp\htdocs\aplikasi\project-wajib\ds_mitra.php on line 26
+[09-Dec-2024 05:10:51 Europe/Berlin] PHP Warning:  Undefined array key "id_mitra" in C:\xampp\htdocs\aplikasi\project-wajib\ds_mitra.php on line 26
+[09-Dec-2024 05:10:52 Europe/Berlin] PHP Warning:  Undefined array key "id_mitra" in C:\xampp\htdocs\aplikasi\project-wajib\ds_mitra.php on line 26
+[09-Dec-2024 05:11:27 Europe/Berlin] PHP Warning:  Undefined array key "id_mitra" in C:\xampp\htdocs\aplikasi\project-wajib\ds_mitra.php on line 26
+[09-Dec-2024 05:11:29 Europe/Berlin] PHP Warning:  Undefined array key "id_mitra" in C:\xampp\htdocs\aplikasi\project-wajib\ds_mitra.php on line 26
+[09-Dec-2024 05:11:30 Europe/Berlin] PHP Warning:  Undefined array key "id_mitra" in C:\xampp\htdocs\aplikasi\project-wajib\ds_mitra.php on line 26
+[09-Dec-2024 05:11:31 Europe/Berlin] PHP Warning:  Undefined array key "id_mitra" in C:\xampp\htdocs\aplikasi\project-wajib\ds_mitra.php on line 26
+[09-Dec-2024 05:11:32 Europe/Berlin] PHP Warning:  Undefined array key "id_mitra" in C:\xampp\htdocs\aplikasi\project-wajib\ds_mitra.php on line 26
+[09-Dec-2024 05:11:33 Europe/Berlin] PHP Warning:  Undefined array key "id_mitra" in C:\xampp\htdocs\aplikasi\project-wajib\ds_mitra.php on line 26
+[09-Dec-2024 05:11:35 Europe/Berlin] PHP Warning:  Undefined array key "id_mitra" in C:\xampp\htdocs\aplikasi\project-wajib\ds_mitra.php on line 26
+[09-Dec-2024 05:11:36 Europe/Berlin] PHP Warning:  Undefined array key "id_mitra" in C:\xampp\htdocs\aplikasi\project-wajib\ds_mitra.php on line 26
+[09-Dec-2024 05:11:37 Europe/Berlin] PHP Warning:  Undefined array key "id_mitra" in C:\xampp\htdocs\aplikasi\project-wajib\ds_mitra.php on line 26
+[09-Dec-2024 05:17:37 Europe/Berlin] PHP Warning:  Undefined array key "id_mitra" in C:\xampp\htdocs\aplikasi\project-wajib\ds_mitra.php on line 27
+[09-Dec-2024 05:17:39 Europe/Berlin] PHP Warning:  Undefined array key "id_mitra" in C:\xampp\htdocs\aplikasi\project-wajib\ds_mitra.php on line 27
+[09-Dec-2024 05:17:40 Europe/Berlin] PHP Warning:  Undefined array key "id_mitra" in C:\xampp\htdocs\aplikasi\project-wajib\ds_mitra.php on line 27
+[09-Dec-2024 05:19:53 Europe/Berlin] PHP Warning:  Undefined variable $conn in C:\xampp\htdocs\aplikasi\project-wajib\ds_mitra.php on line 32
+[09-Dec-2024 05:19:53 Europe/Berlin] PHP Fatal error:  Uncaught Error: Call to a member function prepare() on null in C:\xampp\htdocs\aplikasi\project-wajib\ds_mitra.php:32
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\aplikasi\project-wajib\ds_mitra.php on line 32
+[09-Dec-2024 05:24:31 Europe/Berlin] PHP Fatal error:  Uncaught Error: Call to a member function bind_param() on bool in C:\xampp\htdocs\aplikasi\project-wajib\ds_mitra.php:47
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\aplikasi\project-wajib\ds_mitra.php on line 47
+[09-Dec-2024 06:07:48 Europe/Berlin] ID Mitra sudah ada dalam sesi: MTR0812001
+[09-Dec-2024 06:07:49 Europe/Berlin] ID Mitra sudah ada dalam sesi: MTR0812001
+[09-Dec-2024 06:07:50 Europe/Berlin] ID Mitra sudah ada dalam sesi: MTR0812001
+[09-Dec-2024 06:07:52 Europe/Berlin] ID Mitra sudah ada dalam sesi: MTR0812001
+[09-Dec-2024 06:07:53 Europe/Berlin] ID Mitra sudah ada dalam sesi: MTR0812001
+[09-Dec-2024 06:07:55 Europe/Berlin] ID Mitra sudah ada dalam sesi: MTR0812001
+[09-Dec-2024 06:11:43 Europe/Berlin] ID Mitra sudah ada dalam sesi: MTR0812001
+[09-Dec-2024 06:11:43 Europe/Berlin] PHP Warning:  Undefined variable $total_workshop in C:\xampp\htdocs\aplikasi\project-wajib\ds_mitra.php on line 369
+[09-Dec-2024 06:13:36 Europe/Berlin] ID Mitra sudah ada dalam sesi: MTR0812001
+[09-Dec-2024 06:13:38 Europe/Berlin] ID Mitra sudah ada dalam sesi: MTR0812001
+[09-Dec-2024 06:13:40 Europe/Berlin] ID Mitra sudah ada dalam sesi: MTR0812001
+[09-Dec-2024 06:15:49 Europe/Berlin] ID Mitra sudah ada dalam sesi: MTR0812001
+[09-Dec-2024 06:15:50 Europe/Berlin] ID Mitra sudah ada dalam sesi: MTR0812001
+[09-Dec-2024 06:30:00 Europe/Berlin] PHP Warning:  Undefined variable $id_mitra in C:\xampp\htdocs\aplikasi\project-wajib\ds_mitra.php on line 41
+[09-Dec-2024 07:03:41 Europe/Berlin] PHP Warning:  Undefined variable $pendaftar_per_bulan in C:\xampp\htdocs\aplikasi\project-wajib\ds_mitra.php on line 388
+[09-Dec-2024 07:03:45 Europe/Berlin] PHP Warning:  Undefined variable $pendaftar_per_bulan in C:\xampp\htdocs\aplikasi\project-wajib\ds_mitra.php on line 388
+[09-Dec-2024 07:03:46 Europe/Berlin] PHP Warning:  Undefined variable $pendaftar_per_bulan in C:\xampp\htdocs\aplikasi\project-wajib\ds_mitra.php on line 388
+[09-Dec-2024 07:03:47 Europe/Berlin] PHP Warning:  Undefined variable $pendaftar_per_bulan in C:\xampp\htdocs\aplikasi\project-wajib\ds_mitra.php on line 388
+[09-Dec-2024 07:03:48 Europe/Berlin] PHP Warning:  Undefined variable $pendaftar_per_bulan in C:\xampp\htdocs\aplikasi\project-wajib\ds_mitra.php on line 388
+[09-Dec-2024 07:04:09 Europe/Berlin] PHP Warning:  Undefined variable $total_participants in C:\xampp\htdocs\aplikasi\project-wajib\ds_mitra.php on line 340
+[09-Dec-2024 07:04:09 Europe/Berlin] PHP Warning:  Undefined variable $pendaftar_per_bulan in C:\xampp\htdocs\aplikasi\project-wajib\ds_mitra.php on line 365
+[09-Dec-2024 07:04:11 Europe/Berlin] PHP Warning:  Undefined variable $total_participants in C:\xampp\htdocs\aplikasi\project-wajib\ds_mitra.php on line 340
+[09-Dec-2024 07:04:11 Europe/Berlin] PHP Warning:  Undefined variable $pendaftar_per_bulan in C:\xampp\htdocs\aplikasi\project-wajib\ds_mitra.php on line 365
+[09-Dec-2024 07:04:12 Europe/Berlin] PHP Warning:  Undefined variable $total_participants in C:\xampp\htdocs\aplikasi\project-wajib\ds_mitra.php on line 340
+[09-Dec-2024 07:04:12 Europe/Berlin] PHP Warning:  Undefined variable $pendaftar_per_bulan in C:\xampp\htdocs\aplikasi\project-wajib\ds_mitra.php on line 365
+[09-Dec-2024 07:04:45 Europe/Berlin] PHP Warning:  Undefined variable $pendaftar_per_bulan in C:\xampp\htdocs\aplikasi\project-wajib\ds_mitra.php on line 365
+[09-Dec-2024 07:04:47 Europe/Berlin] PHP Warning:  Undefined variable $pendaftar_per_bulan in C:\xampp\htdocs\aplikasi\project-wajib\ds_mitra.php on line 365
+[09-Dec-2024 07:04:48 Europe/Berlin] PHP Warning:  Undefined variable $pendaftar_per_bulan in C:\xampp\htdocs\aplikasi\project-wajib\ds_mitra.php on line 365
+[09-Dec-2024 07:05:22 Europe/Berlin] PHP Warning:  Undefined variable $pendaftar_per_bulan in C:\xampp\htdocs\aplikasi\project-wajib\ds_mitra.php on line 365

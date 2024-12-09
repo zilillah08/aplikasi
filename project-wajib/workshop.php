@@ -588,10 +588,10 @@ function generateIdWorkshop() {
     console.log('Today:', today);
 
     if (startDate >= today && endDate >= today) {
-        document.getElementById('status').value = 'aktif';
+        document.getElementById('status').value = 'Aktif';
         document.getElementById('submitBtn').disabled = false;
     } else {
-        document.getElementById('status').value = 'nonaktif';
+        document.getElementById('status').value = 'Non-Active';
         document.getElementById('submitBtn').disabled = true;
     }
 }

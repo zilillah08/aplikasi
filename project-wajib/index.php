@@ -17,25 +17,28 @@ if ($conn->connect_error) {
 // Ambil ID workshop dari URL atau parameter
 $id_workshop = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
-// Query untuk mengambil data workshop termasuk kolom gambar
-$sql = "SELECT id_workshop, nama_workshop, deskripsi_workshop, gambar, materi_dilatih, lokasi, tanggal_mulai, tanggal_selesai,tipe, harga_workshop, benefit, persyaratan, sesi_pelatihan FROM workshop WHERE id_workshop = ?";
+$sql = "SELECT id_workshop, nama_workshop, deskripsi_workshop, gambar, materi_dilatih, lokasi, tanggal_mulai, tanggal_selesai, tipe, harga_workshop, benefit, persyaratan, sesi_pelatihan 
+FROM workshop 
+WHERE id_workshop = ?";
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("i", $id_workshop);
 $stmt->execute();
 $result = $stmt->get_result();
+
 if ($result->num_rows > 0) {
-    $workshop = $result->fetch_assoc();
-    
-    // Mengonversi gambar BLOB ke format base64
-    if ($workshop['gambar']) {
-        $base64Image = base64_encode($workshop['gambar']);
-        $imageSrc = "data:image/jpg;base64," . $base64Image; // Sesuaikan dengan format gambar (jpeg, png, dll)
-    } else {
-        $imageSrc = ''; // Jika gambar tidak ada
-    }
+$workshop = $result->fetch_assoc();
+
+// Periksa apakah ada nama gambar
+if (!empty($workshop['gambar'])) {
+// Path gambar disimpan di database, jadi kita hanya menambahkannya di tag img
+$imageSrc = "uploads/" . $workshop['gambar'];
 } else {
-    echo "Workshop tidak ditemukan!";
-    exit();
+// Gambar default jika tidak ada gambar
+$imageSrc = 'path/to/default/image.jpg';
+}
+} else {
+echo "Workshop tidak ditemukan!";
+exit();
 }
 
 // Query untuk menghitung rata-rata rating
@@ -45,7 +48,8 @@ $stmt_rating->bind_param("i", $id_workshop);
 $stmt_rating->execute();
 $result_rating = $stmt_rating->get_result();
 $row_rating = $result_rating->fetch_assoc();
-$rating = round($row_rating['avg_rating']); // Rating dibulatkan ke integer
+$rating = isset($row_rating['avg_rating']) ? round($row_rating['avg_rating']) : 0;
+
 
 // Query untuk mengambil ulasan dari tabel rating
 $sql_reviews = "SELECT r.ulasan, u.nama_user FROM rating r 

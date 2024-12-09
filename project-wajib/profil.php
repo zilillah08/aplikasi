@@ -2,12 +2,15 @@
 include 'config.php'; 
 session_start();
 
+// Periksa apakah pengguna sudah login
 if (!isset($_SESSION['role'])) {
-  header("Location:loginUser.php?aksi=belum");
-  exit();
+    header("Location:loginUser.php?aksi=belum");
+    exit();
 }
 
-$level = $_SESSION['role'];
+// Ambil data dari sesi
+$role = $_SESSION['role'];
+$id_user = $_SESSION['id_user'];
 
 // Koneksi ke database
 $host = "localhost";
@@ -22,13 +25,10 @@ if ($conn->connect_error) {
     die("Koneksi gagal: " . $conn->connect_error);
 }
 
-// Ambil ID user dari URL atau parameter
-$id_user = isset($_GET['id']) ? intval($_GET['id']) : 0;
-
-// Query untuk mengambil data user termasuk kolom gambar
-$sql = "SELECT id_user, email, password, nama_user, no_tlp, role, code, gambar FROM userr WHERE id_user = ?";
+// Query untuk mengambil data pengguna berdasarkan sesi
+$sql = "SELECT id_user, email, nama_user, no_tlp, role, gambar FROM userr WHERE id_user = ? AND role = ?";
 $stmt = $conn->prepare($sql);
-$stmt->bind_param("i", $id_user);
+$stmt->bind_param("is", $id_user, $role);
 $stmt->execute();
 $result = $stmt->get_result();
 
@@ -38,46 +38,28 @@ if ($result->num_rows > 0) {
 
     // Set nilai ke session
     $_SESSION['email'] = $userr['email'];
+    $_SESSION['nama_user'] = $userr['nama_user'];
     $_SESSION['no_tlp'] = $userr['no_tlp'];
-    $_SESSION['gambar'] =$userr['gambar'];
+    $_SESSION['gambar'] = $userr['gambar'];
 
-    // Mengonversi gambar BLOB ke format base64
-    if ($userr['gambar']) {
-        $imageSrc = "uploads/" . $userr['gambar']; // Sesuaikan path gambar
-    } else {
-        $imageSrc = ''; // Jika gambar tidak ada
-    }
+    // Path gambar
+    $imageSrc = $userr['gambar'] ? "uploads/" . $userr['gambar'] : ''; // Default jika gambar tidak ada
 } else {
-    echo "User tidak ditemukan!";
+    echo "Data pengguna tidak ditemukan!";
     exit();
 }
 
+// Jika form diperbarui
 if (isset($_POST['kirim'])) {
     // Ambil data dari form
-    $id_user = $_SESSION['id_user']; // ID user dari session
-    $role = $_SESSION['role'];       // Role dari session
     $nama_user = $_POST['nama_user'];
     $no_tlp = $_POST['no_tlp'];
     $gambar = $_FILES['gambar'];
 
-    // Ambil data gambar lama dari database
-    $sql_get_gambar = "SELECT gambar FROM userr WHERE id_user = ? AND role = ?";
-    $stmt_get_gambar = $conn->prepare($sql_get_gambar);
-    $stmt_get_gambar->bind_param("is", $id_user, $role);
-    $stmt_get_gambar->execute();
-    $result_get_gambar = $stmt_get_gambar->get_result();
-
-    if ($result_get_gambar->num_rows > 0) {
-        $row = $result_get_gambar->fetch_assoc();
-        $target_file = $row['gambar']; // Gunakan gambar lama sebagai default
-    } else {
-        echo "<script>alert('User dengan role $role tidak ditemukan.'); window.history.back();</script>";
-        exit();
-    }
-
     // Proses upload gambar jika ada file baru
+    $target_file = $userr['gambar']; // Gunakan gambar lama jika tidak ada file baru
     if (!empty($gambar['name'])) {
-        $target_dir = __DIR__ . "/uploads/";  // Perbaiki path folder
+        $target_dir = __DIR__ . "/uploads/";
         $target_file = "uploads/" . basename($gambar["name"]);
         $imageFileType = strtolower(pathinfo($target_file, PATHINFO_EXTENSION));
 
@@ -92,10 +74,10 @@ if (isset($_POST['kirim'])) {
         }
     }
 
-    // Update data pengguna hanya jika role = admin
+    // Update data pengguna
     $sql_update = "UPDATE userr SET nama_user = ?, no_tlp = ?, gambar = ? WHERE id_user = ? AND role = ?";
     $stmt_update = $conn->prepare($sql_update);
-    $stmt_update->bind_param("sssss", $nama_user, $no_tlp, $target_file, $id_user, $role);
+    $stmt_update->bind_param("sssis", $nama_user, $no_tlp, $target_file, $id_user, $role);
 
     if ($stmt_update->execute()) {
         // Update session dengan data baru
@@ -111,6 +93,7 @@ if (isset($_POST['kirim'])) {
     $stmt_update->close();
 }
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -387,7 +370,7 @@ input[type="email"] {
             <div class="quixnav-scroll">
                 <ul class="metismenu" id="menu">
                 <?php 
-                    if ($level=="admin") {
+                    if ($role=="admin") {
                      ?>
                     <li class="nav-label first">main menu</li>
                     <li><a class="" href="home.php" aria-expanded="false"><i
@@ -420,30 +403,33 @@ input[type="email"] {
                 }
                 ?>
 
-                    <?php 
-                    if ($level=="mitra") {
+                <?php 
+                    if ($role=="mitra") {
                      ?>
                       <li class="nav-label first">main menu</li>
-                    <li><a class="" href="dashboardmitra.php" aria-expanded="false"><i
+                    <li><a class="" href="ds_mitra.php" aria-expanded="false"><i
                                 class="fa fa-light fa-table-columns"></i><span class="nav-text">Dashboard</span></a>
                     </li>
-                    <li><a class="" href="profilmitra.php" aria-expanded="false"><i 
-                                class="fa-solid fa-user"></i><span class="nav-text">profil</span></a>
+                    <li><a class="" href="workshop.php" aria-expanded="false"><i
+                                class="fa fa-users"></i><span class="nav-text">Workshop</span></a>
                     </li>
-                    <li><a class="" href="kelolaWorkshop.php" aria-expanded="false"><i
-                                class="fa fa-users"></i><span class="nav-text">Kelola Workshop</span></a>
+                    <li><a class="" href="rating.php" aria-expanded="false"><i 
+                                class="fa-solid fa-user-group"></i><span class="nav-text">Rating</span></a>
                     </li>
-                    <li><a class="" href="daftarPeserta.php" aria-expanded="false"><i 
-                                class="fa-solid fa-user-group"></i><span class="nav-text">Daftar Peserta</span></a>
+                    <li class="nav-label first">Laporan</li>
+                    <li><a class="" href="data_keungan.php" aria-expanded="false"><i
+                                class="fa-solid fa-book"></i><span class="nav-text">Data Keuangan</span></a>
                     </li>
-                    <li><a class="" href="sertifikatmitra.php" aria-expanded="false"><i
-                                class="fa fa-certificate"></i><span class="nav-text">Sertifikat</span></a>
+                    <li><a class="" href="data_peserta.php" aria-expanded="false"><i
+                                class="fa-solid fa-book"></i><span class="nav-text">Data Peserta</span></a>
                     </li>
                     <?php 
                 }
                 ?>
+                
+                
                 <?php 
-                    if ($level=="peserta") {
+                    if ($role=="peserta") {
                      ?>
                     <li class="nav-label first">main menu</li>
                     <li><a class="" href="ds_peserta.php" aria-expanded="false"><i

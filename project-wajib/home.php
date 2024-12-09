@@ -5,9 +5,9 @@ if (!isset($_SESSION['role'])) {
   header("Location:loginUser.php?aksi=belum");
   exit();
 }
-$level = $_SESSION['role'];
+$role = $_SESSION['role'];
 
-if ($level !== 'admin') {
+if ($role !== 'admin') {
     // Jika pengguna bukan admin, arahkan ke halaman login
     header("Location:loginUser.php?aksi=unauthorized");
     exit(); // Menghentikan eksekusi skrip
@@ -211,7 +211,7 @@ $conn->close();
             <div class="quixnav-scroll">
                 <ul class="metismenu" id="menu">
                 <?php 
-                    if ($level=="admin") {
+                    if ($role=="admin") {
                      ?>
                     <li class="nav-label first">main menu</li>
                     <li><a class="" href="home.php" aria-expanded="false"><i
@@ -244,7 +244,7 @@ $conn->close();
                 }
                 ?>
                 <?php 
-                    if ($level=="mitra") {
+                    if ($role=="mitra") {
                      ?>
                       <li class="nav-label first">main menu</li>
                     <li><a class="" href="ds_mitra.php" aria-expanded="false"><i
@@ -267,7 +267,7 @@ $conn->close();
                 }
                 ?>
                 <?php
-                    if ($level=="peserta") {
+                    if ($role=="peserta") {
                      ?>
                     <li class="nav-label first">main menu</li>
                     <li><a class="" href="ds_peserta.php" aria-expanded="false"><i

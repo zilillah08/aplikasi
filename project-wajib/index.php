@@ -475,7 +475,7 @@ $conn->close();
     <div id="workshopModal" class="modal">
         <div class="modal-content">
             <span class="close">&times;</span>
-            <img src="<?php echo $imageSrc; ?>" alt="Workshop Image" class="modal-image">
+            <img src="<?php echo $imageSrc; ?>" alt="Workshop Image" />
             <h3><?php echo htmlspecialchars($workshop['nama_workshop']); ?></h3>
             <p class="modal-description"><?php echo nl2br(htmlspecialchars($workshop['deskripsi_workshop'])); ?></p>
 

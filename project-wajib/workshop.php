@@ -1,19 +1,138 @@
 <?php
-include'config.php'; 
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+include 'config.php';
 session_start();
+
+// Mengecek apakah pengguna sudah login
 if (!isset($_SESSION['role'])) {
-  header("Location:loginUser.php?aksi=belum");
-  exit();
-}
-$level = $_SESSION['role'];
-
-if ($level !== 'peserta') {
-    // Jika pengguna bukan peserta, arahkan ke halaman login
-    header("Location:loginUser.php?aksi=unauthorized");
-    exit(); // Menghentikan eksekusi skrip
+    header("Location: loginUser.php?aksi=belum");
+    exit();
 }
 
- ?>
+$role = $_SESSION['role'];
+
+// Mengecek apakah role pengguna adalah 'mitra'
+if ($role !== 'mitra') {
+    header("Location: loginUser.php?aksi=unauthorized");
+    exit();
+}
+
+// Mengambil data mitra untuk ditampilkan secara otomatis
+$queryMitra = "SELECT id_mitra, nama_mitra FROM data_mitra LIMIT 1";
+$resultMitra = mysqli_query($koneksi, $queryMitra);
+$mitraData = mysqli_fetch_assoc($resultMitra);
+
+if (!$mitraData) {
+    echo "<script>alert('Mitra tidak ditemukan.'); window.location.href='mitra_list.php';</script>";
+    exit();
+}
+if (isset($_GET['action']) && $_GET['action'] === 'get_last_id') {
+    header('Content-Type: application/json');
+    $lastId = getLastWorkshopId($koneksi); // Ambil ID terakhir dari database
+    if ($lastId) {
+        echo json_encode(['lastId' => $lastId]);
+    } else {
+        echo json_encode(['lastId' => null]); // Jika belum ada ID sebelumnya
+    }
+    exit();
+}
+
+function getLastWorkshopId($conn) {
+    $query = "SELECT id_workshop FROM workshop ORDER BY id_workshop DESC LIMIT 1";
+    $result = mysqli_query($conn, $query);
+    $row = mysqli_fetch_assoc($result);
+    return $row ? $row['id_workshop'] : null;
+}
+
+
+
+// Menangani Form Submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Mengambil data dari form
+    $nama_workshop = mysqli_real_escape_string($koneksi, $_POST['nama_workshop']);
+    $deskripsi_workshop = mysqli_real_escape_string($koneksi, $_POST['deskripsi_workshop']);
+    $materi_dilatih = mysqli_real_escape_string($koneksi, $_POST['materi_dilatih']);
+    $sesi_pelatihan = mysqli_real_escape_string($koneksi, $_POST['sesi_pelatihan']);
+    $persyaratan = mysqli_real_escape_string($koneksi, $_POST['persyaratan']);
+    $benefit = mysqli_real_escape_string($koneksi, $_POST['benefit']);
+    $harga_workshop = mysqli_real_escape_string($koneksi, $_POST['harga_workshop']);
+    $lokasi = mysqli_real_escape_string($koneksi, $_POST['lokasi']);
+    $tanggal_mulai = mysqli_real_escape_string($koneksi, $_POST['tanggal_mulai']);
+    $tanggal_selesai = mysqli_real_escape_string($koneksi, $_POST['tanggal_selesai']);
+    $tipe = mysqli_real_escape_string($koneksi, $_POST['tipe']);
+    $media_pembelajaran = mysqli_real_escape_string($koneksi, $_POST['media_pembelajaran']);
+    $status = mysqli_real_escape_string($koneksi, $_POST['status']);
+    $id_workshop = mysqli_real_escape_string($koneksi, $_POST['id_workshop']); // Mendapatkan ID dari form
+
+    // ID dan Nama Mitra diambil dari database
+    $id_mitra = $mitraData['id_mitra'];
+    $nama_mitra = $mitraData['nama_mitra'];
+
+    // Menangani file gambar
+$gambarName = null;
+if (isset($_FILES['gambar']) && $_FILES['gambar']['error'] === UPLOAD_ERR_OK) {
+    $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
+    $fileInfo = pathinfo($_FILES['gambar']['name']);
+    $extension = strtolower($fileInfo['extension']);
+    $originalName = $fileInfo['basename'];
+
+    if (in_array($extension, $allowedExtensions)) {
+        $uploadDir = "uploads/";  // Folder tempat menyimpan gambar
+        $gambarName = $originalName;
+
+        // Cek apakah file dengan nama yang sama sudah ada
+        if (file_exists($uploadDir . $gambarName)) {
+            $gambarName = pathinfo($gambarName, PATHINFO_FILENAME) . "_" . uniqid() . "." . $extension;
+        }
+
+        $gambarPath = $uploadDir . $gambarName;
+
+        // Pindahkan file gambar ke folder uploads
+        if (!move_uploaded_file($_FILES['gambar']['tmp_name'], $gambarPath)) {
+            echo "<script>alert('Gagal mengunggah gambar.');</script>";
+            exit();
+        }
+    } else {
+        echo "<script>alert('Format gambar tidak valid.');</script>";
+        exit();
+    }
+}
+
+    // Query SQL untuk menyimpan workshop
+    if ($gambarName) {
+        $query = "INSERT INTO workshop 
+                    (id_workshop, nama_workshop, id_mitra, nama_mitra, deskripsi_workshop, materi_dilatih, sesi_pelatihan, persyaratan, benefit, harga_workshop, lokasi, tanggal_mulai, tanggal_selesai, tipe, media_pembelajaran, status, gambar) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    } else {
+        $query = "INSERT INTO workshop 
+                    (id_workshop, nama_workshop, id_mitra, nama_mitra, deskripsi_workshop, materi_dilatih, sesi_pelatihan, persyaratan, benefit, harga_workshop, lokasi, tanggal_mulai, tanggal_selesai, tipe, media_pembelajaran, status) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    }
+
+    // Eksekusi query untuk menyimpan data workshop ke database, termasuk path gambar
+    $stmt = mysqli_prepare($koneksi, $query);
+    if ($gambarName) {
+        mysqli_stmt_bind_param($stmt, "sssssssssssssssss", $id_workshop, $nama_workshop, $id_mitra, $nama_mitra, $deskripsi_workshop, $materi_dilatih, $sesi_pelatihan, $persyaratan, $benefit, $harga_workshop, $lokasi, $tanggal_mulai, $tanggal_selesai, $tipe, $media_pembelajaran, $status, $gambarName);
+    } else {
+        mysqli_stmt_bind_param($stmt, "ssssssssssssssss", $id_workshop, $nama_workshop, $id_mitra, $nama_mitra, $deskripsi_workshop, $materi_dilatih, $sesi_pelatihan, $persyaratan, $benefit, $harga_workshop, $lokasi, $tanggal_mulai, $tanggal_selesai, $tipe, $media_pembelajaran, $status);
+    }
+
+    // Eksekusi query
+    if (mysqli_stmt_execute($stmt)) {
+        echo "<script>alert('Workshop berhasil ditambahkan!'); window.location.href='workshop.php';</script>";
+    } else {
+        echo "Error: " . mysqli_error($koneksi);
+    }
+
+    // Tutup statement dan koneksi
+    mysqli_stmt_close($stmt);
+    mysqli_close($koneksi);
+    }
+?>
+
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -146,7 +265,7 @@ if ($level !== 'peserta') {
             <div class="quixnav-scroll">
                 <ul class="metismenu" id="menu">
                 <?php 
-                    if ($level=="admin") {
+                    if ($role=="admin") {
                      ?>
                     <li class="nav-label first">main menu</li>
                     <li><a class="" href="home.php" aria-expanded="false"><i
@@ -177,30 +296,31 @@ if ($level !== 'peserta') {
                 }
                 ?>
 
-                    <?php 
-                    if ($level=="mitra") {
+<?php 
+                    if ($role=="mitra") {
                      ?>
                       <li class="nav-label first">main menu</li>
-                    <li><a class="" href="dashboardmitra.php" aria-expanded="false"><i
-                                class="icon icon-home"></i><span class="nav-text">Dashboard</span></a>
+                    <li><a class="" href="ds_mitra.php" aria-expanded="false"><i
+                                class="fa fa-light fa-table-columns"></i><span class="nav-text">Dashboard</span></a>
                     </li>
-                    <li><a class="" href="profilmitra.php" aria-expanded="false"><i 
-                                class="fa-solid fa-user"></i><span class="nav-text">profil</span></a>
+                    <li><a class="" href="workshop.php" aria-expanded="false"><i
+                                class="fa fa-users"></i><span class="nav-text">Workshop</span></a>
                     </li>
-                    <li><a class="" href="kelolaWorkshop.php" aria-expanded="false"><i
-                                class="fa fa-users"></i><span class="nav-text">Kelola Workshop</span></a>
+                    <li><a class="" href="rating.php" aria-expanded="false"><i 
+                                class="fa-solid fa-user-group"></i><span class="nav-text">Rating</span></a>
                     </li>
-                    <li><a class="" href="daftarPeserta.php" aria-expanded="false"><i 
-                                class="fa-solid fa-user-group"></i><span class="nav-text">Daftar Peserta</span></a>
+                    <li class="nav-label first">Laporan</li>
+                    <li><a class="" href="data_keungan.php" aria-expanded="false"><i
+                                class="fa-solid fa-book"></i><span class="nav-text">Data Keuangan</span></a>
                     </li>
-                    <li><a class="" href="sertifikatmitra.php" aria-expanded="false"><i
-                                class="fa fa-certificate"></i><span class="nav-text">Sertifikat</span></a>
+                    <li><a class="" href="data_peserta.php" aria-expanded="false"><i
+                                class="fa-solid fa-book"></i><span class="nav-text">Data Peserta</span></a>
                     </li>
                     <?php 
                 }
                 ?>
                 <?php 
-                    if ($level=="peserta") {
+                    if ($role=="peserta") {
                      ?>
                     <li class="nav-label first">main menu</li>
                     <li><a class="" href="ds_peserta.php" aria-expanded="false"><i
@@ -243,15 +363,16 @@ if ($level !== 'peserta') {
 
                 <div class="col-lg-12">
                         <div class="card">
-                            <div class="card-header">
-                                
+                            <div class="card-header"> 
                                 <h4 class="card-title"> Table Workshop</h4>
                             </div>                          
                             <div class="card-body">
-                            <td>
-                            <a href ="../project-wajib/index.php"><button class="btn btn-xs btn-primary"><i class="fa-solid fa-cart-shopping"></i>
-                            Pesan Workshop Lagi</button></a>
-                            <br></td><br>
+                             <td>
+                            <button class="btn btn-xs btn-primary" data-bs-toggle="modal" data-bs-target="#createWorkshopModal">
+                                <i class="fa-solid fa-square-plus"></i> Buat Workshop Baru
+                            </button>
+                            <br>
+                             </td> <br>
                                 <div class="table-responsive">
                                     <table class="table primary-table-bordered">
                                         <thead class="thead-primary">
@@ -259,43 +380,251 @@ if ($level !== 'peserta') {
                                                 <th scope="col">No</th>
                                                 <th scope="col">Id Workshop</th>
                                                 <th scope="col">Nama Workshop</th>
+                                                <th scope="col">Id Mitra</th>
                                                 <th scope="col">Nama Mitra</th>
-                                                <th scope="col">Harga Workshop</th>
-                                                <th scope="col">Status Workshop</th>
-                                                <th scope="col">Tanggal Mulai</th>
-                                                <th scope="col">Tanggal Selesai </th>
-                                                <th scope="col">Tipe Workshop </th>
-                                                <th scope="col">Media Pembelajaran</th>
+                                                <th scope="col">Deskripsi Workshop</th>
+                                                <th scope="col">Materi Dilatih</th>
+                                                <th scope="col">Sesi Pelatihan</th>
+                                                <th scope="col">Persyaratan</th>
+                                                <th scope="col">Benefit</th>
+                                                <th scope="col">Harga Workshop </th>
                                                 <th scope="col">Lokasi </th>
-                                                <th scope="col">aksi </th>
+                                                <th scope="col">Tanggal Mulai </th>
+                                                <th scope="col">Tanggal Selesai </th>
+                                                <th scope="col">Tipe </th>
+                                                <th scope="col">Media Pembelajaran </th>
+                                                <th scope="col">Status</th>
+                                                <th scope="col"> Gambar</th>
+
                                             </tr>
                                         </thead>
                                         <tbody>
+                                        <?php
+                                        include 'config.php';
+                                        $no=1;
+                                        $query = mysqli_query($koneksi, "SELECT * FROM workshop");
+                                        while ($data = mysqli_fetch_array($query)) {
+                                        
+                                        ?>                             
                                             <tr>
-                                                <td>1</td>
-                                                <td>WRK041201</td>
-                                                <td>Desain UI & UX</td>
-                                                <td>Polije</td>
-                                                <td>450.000</td>
-                                                <td>Active</td>
-                                                <td>01-12-2024</td>
-                                                <td>10-12-2024</td>
-                                                <td>Online</td>
-                                                <td>Link Zoom</td>
-                                                <td>Tempat Masing-Masing</td>
-                                                <td>icon Unduh</td>
-                                            </tr>
-                                            
+                                                <td><?php echo $no++ ?></td>
+                                                <td><?php echo $data['id_workshop'] ?></td>
+                                                <td><?php echo $data['nama_workshop'] ?></td>
+                                                <td><?php echo $data['id_mitra'] ?></td>
+                                                <td><?php echo $data['nama_mitra'] ?></td>
+                                                <td><?php echo $data['deskripsi_workshop'] ?></td>
+                                                <td><?php echo $data['materi_dilatih'] ?></td>
+                                                <td><?php echo $data['sesi_pelatihan'] ?></td>
+                                                <td><?php echo $data['persyaratan'] ?></td>
+                                                <td><?php echo $data['benefit'] ?></td>
+                                                <td><?php echo $data['harga_workshop'] ?></td>
+                                                <td><?php echo $data['lokasi'] ?></td>
+                                                <td><?php echo $data['tanggal_mulai'] ?></td>
+                                                <td><?php echo $data['tanggal_selesai'] ?></td>
+                                                <td><?php echo $data['tipe'] ?></td>
+                                                <td><?php echo $data['media_pembelajaran'] ?></td>
+                                                <td><?php echo $data['status'] ?></td>
+                                                <td><?php echo $data['gambar'] ?></td>
+                                            <?php } ?>
+                                            </tr>         
                                         </tbody>
                                     </table>
                                 </div>
                             </div>
                         </div>
+                        </div>
                     </div>
-               
+                </div>
+
+   <!-- Modal Buat Workshop Baru -->
+    <div class="modal fade" id="createWorkshopModal" tabindex="-1" aria-labelledby="createWorkshopModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createWorkshopModalLabel">Buat Workshop Baru</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+            <form action="workshop.php" method="POST" enctype="multipart/form-data">
+            <!-- ID Workshop (otomatis) -->
+                    <div class="mb-3">
+                            <label for="id_workshop" class="form-label">ID Workshop</label>
+                            <input type="text" class="form-control" id="id_workshop" name="id_workshop" readonly>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="nama_workshop" class="form-label">Nama Workshop</label>
+                            <input type="text" class="form-control" id="nama_workshop" name="nama_workshop" >
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="id_mitra" class="form-label">ID Mitra</label>
+                            <input type="text" class="form-control" id="id_mitra" name="id_mitra" value="<?= htmlspecialchars($mitraData['id_mitra']); ?>" required readonly>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="nama_mitra" class="form-label">Nama Mitra</label>
+                            <input type="text" class="form-control" id="nama_mitra" name="nama_mitra" value="<?= htmlspecialchars($mitraData['nama_mitra']); ?>" required readonly>
+                        </div>
+
+                    <div class="mb-3">
+                        <label for="deskripsi_workshop" class="form-label">Deskripsi Workshop</label>
+                        <textarea class="form-control" id="deskripsi_workshop" name="deskripsi_workshop" ></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="materi_dilatih" class="form-label">Materi Dilatih</label>
+                        <textarea class="form-control" id="materi_dilatih" name="materi_dilatih" ></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="sesi_pelatihan" class="form-label">Sesi Pelatihan</label>
+                        <textarea class="form-control" id="sesi_pelatihan" name="sesi_pelatihan" ></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="persyaratan" class="form-label">Persyaratan</label>
+                        <textarea class="form-control" id="persyaratan" name="persyaratan" ></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="benefit" class="form-label">Benefit</label>
+                        <textarea class="form-control" id="benefit" name="benefit" ></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="harga_workshop" class="form-label">Harga Workshop</label>
+                        <textarea class="form-control" id="harga_workshop" name="harga_workshop" ></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="lokasi" class="form-label">Lokasi</label>
+                        <textarea class="form-control" id="lokasi" name="lokasi" ></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="tanggal_mulai" class="form-label">Tanggal Mulai</label>
+                        <input type="date" class="form-control" id="tanggal_mulai" name="tanggal_mulai" >
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="tanggal_selesai" class="form-label">Tanggal Selesai</label>
+                        <input type="date" class="form-control" id="tanggal_selesai" name="tanggal_selesai" >
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="tipe" class="form-label">Tipe</label>
+                        <input type="text" class="form-control" id="tipe" name="tipe" >
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="media_pembelajaran" class="form-label">Media Pembelajaran</label>
+                        <input type="text" class="form-control" id="media_pembelajaran" name="media_pembelajaran" >
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="status" class="form-label">Status</label>
+                        <input type="text" class="form-control" id="status" name="status" >
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="gambar" class="form-label">Gambar</label>
+                        <input type="file" class="form-control" id="gambar" name="gambar" accept="uploads/*">
+                    </div>
+                    <button type="submit" class="btn btn-primary" id="submitBtn">Simpan</button>
+
+                </form>
             </div>
         </div>
-        <!--**********************************
+    </div>
+</div><!-- end modal -->
+
+<script>
+document.getElementById('createWorkshopModal').addEventListener('shown.bs.modal', function () {
+    generateIdWorkshop(); // Panggil fungsi setiap kali modal dibuka
+});
+function generateIdWorkshop() {
+    const today = new Date();
+    const date = today.getDate().toString().padStart(2, '0');
+    const month = (today.getMonth() + 1).toString().padStart(2, '0');
+
+    // Ambil data ID terakhir dari server
+    fetch('workshop.php?action=get_last_id')
+        .then(response => response.json())
+        .then(data => {
+            console.log('Response from API:', data); // Debugging
+            let lastId = data.lastId || ''; // Ambil ID terakhir
+            
+            // Ambil satu digit terakhir dari nomor ID workshop
+            let lastNumber = 1; // Default value jika tidak ada ID sebelumnya
+            if (lastId) {
+                const numberPart = lastId.slice(-3); // Ambil digit terakhir dari ID
+                lastNumber = parseInt(numberPart) + 1;
+            }
+
+            // Pastikan nomor urut hanya satu digit
+            const generatedId = 'WRK' + date + month + lastNumber.toString().padStart(3, '0');
+            
+            // Set nilai ID Workshop
+            document.getElementById('id_workshop').value = generatedId;
+        })
+        .catch(error => {
+            console.error('Error generating ID workshop:', error);
+        });
+}
+
+
+        document.getElementById('createWorkshopModal').addEventListener('shown.bs.modal', function () {
+            generateIdWorkshop(); // Panggil fungsi setiap kali modal dibuka
+        });
+
+        
+    function checkStatus() {
+    const startDate = new Date(document.getElementById('tanggal_mulai').value);
+    const endDate = new Date(document.getElementById('tanggal_selesai').value);
+    const today = new Date();
+
+    console.log('Start Date:', startDate);
+    console.log('End Date:', endDate);
+    console.log('Today:', today);
+
+    if (startDate >= today && endDate >= today) {
+        document.getElementById('status').value = 'Aktif';
+        document.getElementById('submitBtn').disabled = false;
+    } else {
+        document.getElementById('status').value = 'Non-Active';
+        document.getElementById('submitBtn').disabled = true;
+    }
+}
+
+// Pastikan status diperbarui saat tanggal mulai atau selesai berubah
+document.getElementById('tanggal_mulai').addEventListener('change', checkStatus);
+document.getElementById('tanggal_selesai').addEventListener('change', checkStatus)
+
+        document.getElementById('createWorkshopModal').addEventListener('shown.bs.modal', function () {
+            generateIdWorkshop(); // Panggil fungsi setiap kali modal dibuka
+        });
+
+
+        function fetchMitraData() {
+            fetch('workshop.php')  // PHP untuk mengambil data mitra default
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('id_mitra').value = data.id_mitra;
+                        document.getElementById('nama_mitra').value = data.nama_mitra;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching mitra data:', error);
+                });
+        }
+ </script>
+    <!-- Bootstrap JS and Popper.js -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js"></script>
+
+
+                <!--**********************************
             Content body end
         ***********************************-->
 
